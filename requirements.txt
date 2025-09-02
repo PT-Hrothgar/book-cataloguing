@@ -1,0 +1,2 @@
+num2words>=0.5.5
+roman-numerals>=3.0.0
