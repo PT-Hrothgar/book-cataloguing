@@ -1,6 +1,6 @@
 [project]
 name = "book-cataloguing"
-version = "0.9"
+version = "1.0"
 authors = [
     {name = "PT-Hrothgar"}
 ]
@@ -9,7 +9,7 @@ dependencies = [
     "roman-numerals>=3.0.0"
 ]
 description = "Correctly capitalize and sort the titles and authors of books."
-readme = "README.md"
+readme = "README.rst"
 requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 4 - Beta",

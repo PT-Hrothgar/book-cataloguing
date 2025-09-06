@@ -35,14 +35,18 @@ AUTHOR_TITLES = []
 
 def set_lowercase_title_words(filename: Optional[str] = None) -> None:
     """
-    Get a new list of lowercase words in book titles from file.
+    Get a new list of lowercase words in book titles from a file.
+
+    In the file should be words like "the", "a", and "of", that should not
+    be capitalized when they are in the title of a book (unless they are at
+    the beginning or end of a title or subtitle.)
 
     The referenced file should have one word on each line. The case of the
     words does not matter, and they need not be sorted in any particular
     order.
 
-    If "filename" is None, the default file for this list
-    (book_cataloguing/lowercase_title_words.txt) will be used.
+    If ``filename`` is None, the default file for this list
+    (``book_cataloguing/lowercase_title_words.txt``) will be used.
     """
     LOWERCASE_TITLE_WORDS.clear()
 
@@ -56,14 +60,18 @@ def set_lowercase_title_words(filename: Optional[str] = None) -> None:
 
 def set_lowercase_author_words(filename: Optional[str] = None) -> None:
     """
-    Get a new list of lowercase words in author names from file.
+    Get a new list of lowercase words in author names from a file.
+
+    In the file should be words like "le", "von", and "of", that should not
+    be capitalized when they are part of an author's name, and that might be
+    part of a multi-word surname (such as "von Neumann").
 
     The referenced file should have one word on each line. The case of the
     words does not matter, and they need not be sorted in any particular
     order.
 
-    If "filename" is None, the default file for this list
-    (book_cataloguing/lowercase_author_words.txt) will be used.
+    If ``filename`` is None, the default file for this list
+    (``book_cataloguing/lowercase_author_words.txt``) will be used.
     """
     LOWERCASE_AUTHOR_WORDS.clear()
 
@@ -77,17 +85,17 @@ def set_lowercase_author_words(filename: Optional[str] = None) -> None:
 
 def set_mac_surnames(filename: Optional[str] = None) -> None:
     """
-    Get a new list of surnames starting with Mac from file.
+    Get a new list of surnames starting with "Mac" from a file.
 
-    The words in the file should all be names like "MacDonald", where the
-    fourth letter (the letter following the "Mac") should be capitalized.
+    In the file should be names like "MacDonald", where the fourth letter
+    (the letter following the "Mac") should be capitalized.
 
     The referenced file should have one word on each line. The case of the
     words does not matter, and they need not be sorted in any particular
     order.
 
-    If "filename" is None, the default file for this list
-    (book_cataloguing/mac_surnames.txt) will be used.
+    If ``filename`` is None, the default file for this list
+    (``book_cataloguing/mac_surnames.txt``) will be used.
     """
     MAC_SURNAMES.clear()
 
@@ -101,14 +109,18 @@ def set_mac_surnames(filename: Optional[str] = None) -> None:
 
 def set_author_titles(filename: Optional[str] = None) -> None:
     """
-    Get a new list of author titles form file.
+    Get a new list of author titles from a file.
+
+    In the file should be words like "lord", "mrs", and "president", that,
+    when they appear in an author's name, are likely titles rather than part
+    of the name itself.
 
     The referenced file should have one word on each line. The case of the
     words does not matter, and they need not be sorted in any particular
     order.
 
-    If "filename" is None, the default file for this list
-    (book_cataloguing/author_titles.txt) will be used.
+    If ``filename`` is None, the default file for this list
+    (``book_cataloguing/author_titles.txt``) will be used.
     """
     AUTHOR_TITLES.clear()
 
@@ -224,16 +236,16 @@ def _list_of_words(string: str, alpha_only: bool = False) -> tuple[list, int]:
 
     E.g.:
     >>> _list_of_words("@apple + banana. ")
-    (["@", "apple", " + ", "banana", ". "], 2)
+    (['@', 'apple', ' + ', 'banana', '. '], 2)
     >>> _list_of_words("//A.four-word (string. ")
-    (["//", "A", ".", "four", "-", "word", " (", "string", ". "], 4)
+    (['//', 'A', '.', 'four', '-', 'word', ' (', 'string', '. '], 4)
 
     When alpha_only is True, the list will only contain the alphanumeric
     sections, but in this case hyphens will be considered alphanumeric.
 
     E.g.:
     >>> _list_of_words("//A.three-word (string. ", alpha_only=True)
-    (["A", "three-word", "string"], 3)
+    (['A', 'three-word', 'string'], 3)
     """
     if not string:
         return [], 0
@@ -285,8 +297,54 @@ def _list_of_words(string: str, alpha_only: bool = False) -> tuple[list, int]:
     return result, word_count
 
 
-# XXX doc todo
 def capitalize_title(title: str, handle_mc_prefix: bool = True) -> str:
+    """
+    Capitalize a book title, preserving all non-alphanumeric characters.
+
+    This function considers all non-alphanumeric characters except
+    apostrophes to separate words, and it converts all words recognized as
+    Roman numerals to uppercase. It also capitalizes the second *letter* of
+    words starting with any letter followed by an apostrophe (e.g. O'Brien).
+    See :ref:`capitalize-title-examples` below.
+
+    :param str title: Title to capitalize.
+    :param bool handle_mc_prefix: Whether or not to treat words starting with
+        "mc" or "mac" differently. When True, capitalize the third letter of
+        all words starting with "mc" (e.g. convert "mcdonald" to "McDonald"),
+        and fourth letter of all words starting with "mac" if they are in the
+        list of Mac surnames. (You can change this list with the function
+        :py:func:`~book_cataloguing.set_mac_surnames`.) When False, capitalize
+        only the first letter of such names.
+    :returns: Capitalized version of title.
+    :rtype: str
+
+    .. _capitalize-title-examples:
+
+    Examples
+    --------
+    >>> capitalize_title("the hobbit: or, there and back again")
+    'The Hobbit: Or, There and Back Again'
+    >>> capitalize_title(" THE*LORD =of tHE RIngs]")
+    ' The*Lord =of the Rings]'
+    >>> capitalize_title("the thirteen-gun salute")
+    'The Thirteen-Gun Salute'
+    >>> capitalize_title("a midsummer night's dream")
+    "A Midsummer Night's Dream"
+
+    Handling of Roman numerals:
+
+    >>> capitalize_title("henry vi, part ii")
+    'Henry VI, Part II'
+
+    Handling of name prefixes:
+
+    >>> capitalize_title("A BIOGRAPHY OF GEORGE MACDONALD")
+    'A Biography of George MacDonald'
+    >>> capitalize_title("a biography of george macdonald", False)
+    'A Biography of George Macdonald'
+    >>> capitalize_title("a biography of patrick o'brien")
+    "A Biography of Patrick O'Brien"
+    """
     # Separate title into alphanumeric and non-alphanumeric sections
     sections, total_word_count = _list_of_words(title)
     total_section_count = len(sections)
@@ -335,8 +393,50 @@ def capitalize_title(title: str, handle_mc_prefix: bool = True) -> str:
     return "".join(sections)
 
 
-# XXX doc todo
 def capitalize_author(author: str, handle_mc_prefix: bool = True) -> str:
+    """
+    Capitalize the name of an author, preserving non-alphanumeric characters.
+
+    This function considers all non-alphanumeric characters except
+    apostrophes to separate words, and it converts all words recognized as
+    Roman numerals to uppercase. It also capitalizes the second *letter* of
+    words starting with any letter followed by an apostrophe (e.g. O'Brien).
+    See :ref:`capitalize-author-examples` below.
+
+    :param str author: Author name to capitalize.
+    :param bool handle_mc_prefix: Whether or not to treat words starting with
+        "mc" or "mac" differently. When True, capitalize the third letter of
+        all words starting with "mc" (e.g. convert "mcdonald" to "McDonald"),
+        and fourth letter of all words starting with "mac" if they are in the
+        list of Mac surnames. (You can change this list with the function
+        :py:func:`~book_cataloguing.set_mac_surnames`.) When False, capitalize
+        only the first letter of such names.
+    :returns: Capitalized version of author name.
+    :rtype: str
+
+    .. _capitalize-author-examples:
+
+    Examples
+    --------
+    >>> capitalize_author("ludwig van beethoven")
+    'Ludwig van Beethoven'
+    >>> capitalize_author(" .LEO*TOLstoY =")
+    ' .Leo*Tolstoy ='
+
+    Handling of Roman numerals:
+
+    >>> capitalize_author("pope john xxiii")
+    'Pope John XXIII'
+
+    Handling of name prefixes:
+
+    >>> capitalize_author("CORMAC MCCARTHY")
+    'Cormac McCarthy'
+    >>> capitalize_author("cormac mccarthy", False)
+    'Cormac Mccarthy'
+    >>> capitalize_author("patrick.o'brien")
+    "Patrick.O'Brien"
+    """
     # Separate author's name into alphanumeric and non-alphanumeric sections
     sections, total_word_count = _list_of_words(author)
 
