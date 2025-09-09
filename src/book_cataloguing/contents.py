@@ -1,4 +1,3 @@
-# Python >=3.9
 from pathlib import Path as _Path
 from re import search as _search
 from string import ascii_letters as _ascii_letters, digits as _digits
@@ -216,7 +215,6 @@ def _capitalize(string: str, handle_mc_prefix: bool = True) -> str:
 
 
 def _is_roman_numeral(string: str) -> bool:
-    """Internal case-insensitive function for finding valid Roman numerals."""
     try:
         _rn.RomanNumeral.from_string(string.lower())
     except _rn.InvalidRomanNumeralError:
@@ -313,8 +311,9 @@ def capitalize_title(title: str, handle_mc_prefix: bool = True) -> str:
         all words starting with "mc" (e.g. convert "mcdonald" to "McDonald"),
         and fourth letter of all words starting with "mac" if they are in the
         list of Mac surnames. (You can change this list with the function
-        :py:func:`~book_cataloguing.set_mac_surnames`.) When False, capitalize
-        only the first letter of such names.
+        :py:func:`~book_cataloguing.set_mac_surnames`.) These prefixes are
+        detected case-insensitively. When False, capitalize only the first
+        letter of such names.
     :returns: Capitalized version of title.
     :rtype: str
 
@@ -409,8 +408,9 @@ def capitalize_author(author: str, handle_mc_prefix: bool = True) -> str:
         all words starting with "mc" (e.g. convert "mcdonald" to "McDonald"),
         and fourth letter of all words starting with "mac" if they are in the
         list of Mac surnames. (You can change this list with the function
-        :py:func:`~book_cataloguing.set_mac_surnames`.) When False, capitalize
-        only the first letter of such names.
+        :py:func:`~book_cataloguing.set_mac_surnames`.) These prefixes are
+        detected case-insensitively. When False, capitalize only the first
+        letter of such names.
     :returns: Capitalized version of author name.
     :rtype: str
 
@@ -468,6 +468,63 @@ def get_sortable_title(
     correct_case: bool = True,
     smart_numbers: bool = True,
 ) -> str:
+    """
+    Return a representation of the title that is usable for sorting.
+
+    This involves removing the first word of the title if it is "a", "an",
+    or "the", and removing non-alphanumeric characters as well.
+
+    From this function's point of view, a word separator is any combination
+    of non-alphanumeric characters that contains a space. See
+    :ref:`get-sortable-title-examples` below.
+
+    :param str title: Title to return sortable version of.
+    :param bool handle_mc_prefix: If ``correct_case`` is True (see below),
+        then pass this parameter as a keyword argument with the same name in
+        the call to :py:func:`~book_cataloguing.capitalize_title`. Default
+        True.
+    :param bool correct_case: If True, capitalize the title with the
+        function :py:func:`~book_cataloguing.capitalize_title` before
+        returning it. If False, return the title in all lowercase. Default
+        True.
+    :param bool smart_numbers: If True, convert all Arabic numerals in the
+        title to their written-out equivalents. Comma-separated numbers will
+        also be converted (e.g. 30,000 to "thirty thousand"). See
+        :ref:`get-sortable-title-examples` below.
+    :returns: Sortable version of title, with no leading "a", "an", or "the".
+    :rtype: str
+
+    .. _get-sortable-title-examples:
+
+    Examples
+    --------
+    >>> get_sortable_title("an episode of sparrows")
+    'Episode of Sparrows'
+    >>> get_sortable_title(" `the +Hob.bit")
+    'Hobbit'
+    >>> get_sortable_title("MOSTLY  H-ARMLESS)")
+    'Mostly Harmless'
+
+    When ``correct_case`` is False:
+
+    >>> get_sortable_title("an episode of sparrows", correct_case=False)
+    'episode of sparrows'
+    >>> get_sortable_title(" `the +Hob.bit", correct_case=False)
+    'hobbit'
+    >>> get_sortable_title("MOSTLY  H-ARMLESS)", correct_case=False)
+    'mostly harmless'
+
+    With numbers in the title:
+
+    >>> get_sortable_title("20,000 leagues under the sea")
+    'Twenty Thousand Leagues Under the Sea'
+    >>> get_sortable_title("Around the World in 8,0 Days", correct_case=False)
+    'around the world in eighty days'
+    >>> # Commas within numbers will be removed even if smart_numbers == False,
+    >>> # as they are non-alphanumeric
+    >>> get_sortable_title("20,000 leagues under the sea", smart_numbers=False)
+    '20000 Leagues Under the Sea'
+    """
     title = title.lower()
 
     # Ensure there are alphanumeric characters in the title
@@ -606,12 +663,99 @@ def _separate_author_name(
     )
 
 
-# XXX doc todo
 def get_sortable_author(
     author: str,
     handle_mc_prefix: bool = True,
     correct_case: bool = True
 ) -> str:
+    """
+    Return author's name in the format "last, first".
+
+    This function considers all non-alphanumeric characters except
+    apostrophes to separate words. It also places periods after one-letter
+    words (assuming them to be initials), and it removes all
+    non-alphanumeric characters in the result except for:
+
+    * These periods,
+    * All hyphens,
+    * The comma separating the first and last names, and
+    * The period after "jr" or "sr", if applicable.
+
+    By default, the author's surname is assumed to be one word long.
+    However, if the last part of the name is a Roman numeral, "jr", or "sr",
+    it is assumed to be part of the surname. Also, if the surname is
+    prefixed with a word in the list of lowercase author words (such as
+    "le" or "von"), that word is assumed to be part of the surname. (You may
+    change this list with the function
+    :py:func:`~book_cataloguing.set_lowercase_author_words`.) See
+    :ref:`get-sortable-author-examples` below.
+
+    According to the Anglo-American Cataloguing Rules, authors whose names
+    begin with "mc" should be alphabetized as if their names start with
+    "mac". This function replaces the prefix "mc" in this way to make that
+    rule easier to follow; again, please see
+    :ref:`get-sortable-author-examples`.
+
+    Lastly, this function removes from the given name words such as "lord"
+    and "mr" that are in the list of author titles. (You may change this
+    list with the function :py:func:`~book_cataloguing.set_author_titles`.)
+
+    :param str author: Author name to return in "last, first" format.
+    :param bool handle_mc_prefix: If ``correct_case`` is True (see below),
+        then pass this parameter as a keyword argument with the same name in
+        the call to :py:func:`~book_cataloguing.capitalize_author`. Default
+        True. Please note that this parameter does **not** change whether or
+        not the "mc" prefix is replaced with "mac" as mentioned above; this
+        behavior cannot be disabled. It only controls the capitalization of
+        such prefixes.
+    :param bool correct_case: If True, capitalize the author's name with the
+        function :py:func:`~book_cataloguing.capitalize_author` before
+        returning it. If False, return the name in all lowercase. Default
+        True.
+    :returns: Author's name in "last, first" format.
+    :rtype: str
+
+    .. _get-sortable-author-examples:
+
+    Examples
+    --------
+    >>> get_sortable_author("charles dickens")
+    'Dickens, Charles'
+    >>> get_sortable_author(" /Douglas#ADAMS. ")
+    'Adams, Douglas'
+    >>> get_sortable_author("GENE STRATTON-PORTER")
+    'Stratton-Porter, Gene'
+
+    With name suffixes:
+
+    >>> get_sortable_author("richard henry dana jr")
+    'Dana Jr., Richard Henry'
+    >>> get_sortable_author("john doe iii")
+    'Doe III, John'
+
+    With multi-word surnames:
+
+    >>> get_sortable_author("alexander the great")
+    'the Great, Alexander'
+    >>> get_sortable_author("johannes van der doe")
+    'van der Doe, Johannes'
+
+    With titles in the name:
+
+    >>> get_sortable_author("Alfred, Lord Tennyson")
+    'Tennyson, Alfred'
+    >>> get_sortable_author("president george herbert walker bush")
+    'Bush, George Herbert Walker'
+
+    Handling of "Mc" prefixes:
+
+    >>> get_sortable_author("cormac mccarthy")
+    'MacCarthy, Cormac'
+    >>> get_sortable_author("cormac mccarthy", correct_case=False)
+    'maccarthy, cormac'
+    >>> get_sortable_author("cormac mccarthy", handle_mc_prefix=False)
+    'Maccarthy, Cormac'
+    """
     return ", ".join(_separate_author_name(
         author,
         handle_mc_prefix=handle_mc_prefix,
@@ -637,7 +781,6 @@ def _internal_sort(
     )
 
 
-# XXX doc todo
 def title_sort(
     iterable: Iterator[Any],
     /,
@@ -646,6 +789,30 @@ def title_sort(
     reverse: bool = False,
     smart_numbers: bool = True,
 ) -> list[Any]:
+    """
+    Sort the given objects as if they are book titles.
+
+    :param iterable: Iterator of objects to sort.
+    :type iterable: Iterator[Any]
+    :param key: Function with which to extract a comparison key from each
+        item from the iterable. Default is None (items are compared
+        directly).
+    :type key: Optional[Callable[[Any], str]]
+    :param bool reverse: Whether or not to reverse the sorted order, making
+        it descending instead of ascending. Default False.
+    :param bool smart_numbers: This parameter is supplied as a keyword
+        argument with the same name in the calls to
+        :py:func:`~book_cataloguing.get_sortable_title`.
+    :returns: Sorted list of given objects.
+    :rtype: list[Any]
+
+    The given titles are not sorted as they are; instead the return values
+    of a call to :py:func:`~book_cataloguing.get_sortable_title` for each
+    given object are sorted. Thus, please see the documentation for that
+    function for more details on the sorting. The calls have the
+    ``correct_case`` argument set to ``False``, so comparisons are
+    case-insensitive.
+    """
     return _internal_sort(
         iterable,
         get_sortable_title,
@@ -658,7 +825,6 @@ def title_sort(
     )
 
 
-# XXX doc todo
 def author_sort(
     iterable: Iterator[Any],
     /,
@@ -666,6 +832,27 @@ def author_sort(
     key: Optional[Callable[[Any], str]] = None,
     reverse: bool = False,
 ) -> list[Any]:
+    """
+    Sort the given objects as if they are the authors of books.
+
+    :param iterable: Iterator of objects to sort.
+    :type iterable: Iterator[Any]
+    :param key: Function with which to extract a comparison key from each
+        item from the iterable. Default is None (items are compared
+        directly).
+    :type key: Optional[Callable[[Any], str]]
+    :param bool reverse: Whether or not to reverse the sorted order, making
+        it descending instead of ascending. Default False.
+    :returns: Sorted list of given objects.
+    :rtype: list[Any]
+
+    The given authors are sorted case-insensitively: first by last name, and
+    then by first name. The last and first names used by this function
+    correspond exactly to those determined by
+    :py:func:`~book_cataloguing.get_sortable_author`, and put before and
+    after the comma by that function. Thus, please see its documentation for
+    details on the sorting.
+    """
     return _internal_sort(
         iterable,
         _separate_author_name,

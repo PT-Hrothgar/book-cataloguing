@@ -1,3 +1,7 @@
+# book-cataloguing package
+# Correctly capitalize and sort the titles and authors of books.
+# Online documentation is at http://book-cataloguing.readthedocs.io.
+
 from book_cataloguing.contents import (
     set_lowercase_title_words,
     set_lowercase_author_words,
@@ -24,4 +28,4 @@ __all__ = [
     "title_sort",
     "author_sort"
 ]
-__version__ = "0.9"
+__version__ = "1.0"
