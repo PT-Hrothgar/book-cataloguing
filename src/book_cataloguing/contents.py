@@ -149,7 +149,7 @@ def _num2words_without_and(num: int) -> str:
     E.g., 123 becomes "one hundred twenty-three" rather than "one hundred
     and twenty-three."
     """
-    return _num2words(num).replace("and ", "")
+    return _num2words(num).replace(" and", "")
 
 
 def _strip_accents(string: str) -> str:
