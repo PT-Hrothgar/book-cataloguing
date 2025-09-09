@@ -6,8 +6,18 @@
 
 .. note::
 
-   You may notice that with the current layout of the ``book_cataloguing`` package, all of these functions are actually defined in the file ``contents.py``. However, this layout is subject to change in future versions of the package; please import functions from ``book_cataloguing`` itself rather than ``book_cataloguing.contents``.
+   You may notice that with the current layout of the :py:mod:`book_cataloguing` package, all of these functions are actually defined in the file ``contents.py``. However, this layout is subject to change in future versions of the package; please import functions from ``book_cataloguing`` itself rather than ``book_cataloguing.contents``.
 
+Unicode support?
+****************
+
+:py:mod:`book_cataloguing` has some support for non-ASCII characters:
+
+>>> from book_cataloguing import capitalize_title
+>>> capitalize_title("l'île noire")
+"L'Île Noire"
+
+However, this support is experimental, and subject to change: please do not rely on it for much. **The package does not actually support any language other than English**; it probably will not do a good job capitalizing non-English book titles that are more complicated than the one above.
 
 Changing internal lists
 ***********************
