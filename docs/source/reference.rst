@@ -14,8 +14,8 @@ Unicode support?
 :py:mod:`book_cataloguing` has some support for non-ASCII characters:
 
 >>> from book_cataloguing import capitalize_title
->>> capitalize_title("l'île noire")
-"L'Île Noire"
+>>> print(capitalize_title("l'île noire"))
+L'Île Noire
 
 However, this support is experimental, and subject to change: please do not rely on it for much. **The package does not actually support any language other than English**; it probably will not do a good job capitalizing non-English book titles that are more complicated than the one above.
 
