@@ -22,7 +22,7 @@ class GSAWithCorrectCaseTest(unittest.TestCase):
             mod.get_sortable_author("thucydides"), "Thucydides"
         )
         self.assertEqual(
-            mod.get_sortable_author("Charles' Dickens "), "Dickens, Charles"
+            mod.get_sortable_author("Charles' Dickens "), "Dickens, Charles'"
         )
 
     def test_gsa_with_titles(self):
@@ -76,15 +76,15 @@ class GSAWithCorrectCaseTest(unittest.TestCase):
     def test_gsa_with_apostrophes(self):
         self.assertEqual(
             mod.get_sortable_author("mary`o'hara"),
-            "OHara, Mary"
+            "O'Hara, Mary"
         )
         self.assertEqual(
             mod.get_sortable_author("mADELEINE=L'Engle"),
-            "LEngle, Madeleine"
+            "L'Engle, Madeleine"
         )
         self.assertEqual(
             mod.get_sortable_author("john do'e"),
-            "Doe, John"
+            "Do'e, John"
         )
 
     def test_names_with_hyphens(self):
@@ -245,21 +245,21 @@ class GSAWithoutCorrectCaseTest(unittest.TestCase):
                 "mary`o'hara",
                 correct_case=False
             ),
-            "ohara, mary"
+            "o'hara, mary"
         )
         self.assertEqual(
             mod.get_sortable_author(
                 "mADELEINE=L'Engle",
                 correct_case=False
             ),
-            "lengle, madeleine"
+            "l'engle, madeleine"
         )
         self.assertEqual(
             mod.get_sortable_author(
                 "john do'e",
                 correct_case=False
             ),
-            "doe, john"
+            "do'e, john"
         )
 
     def test_gsa_with_suffixes(self):

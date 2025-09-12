@@ -49,11 +49,16 @@ class GetSortableTitleWithCorrectCaseTest(unittest.TestCase):
             "Around the World in Eighty Days"
         )
         self.assertEqual(
-            mod.get_sortable_title(
-                " 20000 leagues UN.DER THE SEA",
-                smart_numbers=False
-            ),
-            "20000 Leagues Under the Sea"
+            mod.get_sortable_title(" 2004 leagues UN.DER THE SEA"),
+            "Two Thousand Four Leagues Under the Sea"
+        )
+        self.assertEqual(
+            mod.get_sortable_title("the 1st 2 lives of lukas-kasha"),
+            "First Two Lives of Lukas-Kasha"
+        )
+        self.assertEqual(
+            mod.get_sortable_title("the 291nd life of lukas-kasha"),
+            "Two Hundred Ninety-First Life of Lukas-Kasha"
         )
         self.assertEqual(
             mod.get_sortable_title(
@@ -160,6 +165,13 @@ class GetSortableTitleWithoutCorrectCaseTest(unittest.TestCase):
                 correct_case=False
             ),
             "around the world in eighty days"
+        )
+        self.assertEqual(
+            mod.get_sortable_title(
+                "the 291nd life of lukas-kasha",
+                correct_case=False
+            ),
+            "two hundred ninety-first life of lukas-kasha"
         )
         self.assertEqual(
             mod.get_sortable_title(

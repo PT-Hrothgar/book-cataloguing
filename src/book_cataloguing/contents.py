@@ -141,7 +141,7 @@ def _(obj: Any) -> Any:
     return obj
 
 
-def _num2words_without_and(num: int) -> str:
+def _num2words_without_and(num: int, to: str = "cardinal") -> str:
     """
     Internal wrapper for num2words().
 
@@ -149,7 +149,7 @@ def _num2words_without_and(num: int) -> str:
     E.g., 123 becomes "one hundred twenty-three" rather than "one hundred
     and twenty-three."
     """
-    return _num2words(num).replace(" and", "")
+    return _num2words(num, to=to).replace(" and", "")
 
 
 def _strip_accents(string: str) -> str:
@@ -488,11 +488,25 @@ def get_sortable_title(
         returning it. If False, return the title in all lowercase. Default
         True.
     :param bool smart_numbers: If True, convert all Arabic numerals in the
-        title to their written-out equivalents. Comma-separated numbers will
-        also be converted (e.g. 30,000 to "thirty thousand"). See
-        :ref:`get-sortable-title-examples` below.
+        title to their written-out equivalents. See
+        :ref:`get-sortable-title-number-handling` below. Default True.
     :returns: Sortable version of title, with no leading "a", "an", or "the".
     :rtype: str
+
+    .. _get-sortable-title-number-handling:
+
+    Number Handling
+    ---------------
+
+    When the parameter ``smart_numbers`` is ``True`` (the default), all
+    words in the title made entirely of ASCII numerals will be converted to
+    their written-out equivalents. Comma-separated numbers will also be
+    converted as if the commas were not present (e.g. "30,000" to "thirty
+    thousand", "1,2" to "twelve"). If a word begins with a numeral but
+    contains letters as well, the entire word will be replaced with the
+    ordinal form of the number which begins it. Thus "1st" will be replaced
+    with "first", and "21st", "21nd", and "21st0" will all be replaced with
+    "twenty-first".
 
     .. _get-sortable-title-examples:
 
@@ -520,6 +534,8 @@ def get_sortable_title(
     'Twenty Thousand Leagues Under the Sea'
     >>> get_sortable_title("Around the World in 8,0 Days", correct_case=False)
     'around the world in eighty days'
+    >>> get_sortable_title("the 1st 2 lives of lukas-kasha")
+    'First Two Lives of Lukas-Kasha'
     >>> # Commas within numbers will be removed even if smart_numbers == False,
     >>> # as they are non-alphanumeric
     >>> get_sortable_title("20,000 leagues under the sea", smart_numbers=False)
@@ -539,13 +555,30 @@ def get_sortable_title(
                 title[match.end() - 1:]
             ))
 
-        # Convert words to numbers
-        while match := _search(r"\d+", title):
-            title = "".join((
-                title[:match.start()],
-                _num2words_without_and(match.group()),
-                title[match.end():]
-            ))
+        sections, word_count = _list_of_words(title)
+
+        for i, section in enumerate(sections):
+            # Convert words to numbers
+            num_end = 0
+
+            while True:
+                if len(section) > num_end:
+                    if section[num_end].isdecimal():
+                        num_end += 1
+                        continue
+
+                break
+
+            # If this section does not start with a number, continue to next
+            # one
+            if not num_end:
+                continue
+
+            num = int(section[:num_end])
+            to = "cardinal" if section.isdecimal() else "ordinal"
+            sections[i] = _num2words_without_and(num, to=to)
+
+        title = "".join(sections)
 
     # Get list of all the words in the title
     sections, section_count = _list_of_words(title)
@@ -572,9 +605,13 @@ def get_sortable_title(
     # Replace each non-alphanumeric section
     for i, section in enumerate(sections):
         if not _is_alnum(section[0]):
-            # Replace this section with a space if it contains one, otherwise
-            # an empty string
-            sections[i] = " " if " " in section else ""
+            if " " in section:
+                new = " "
+            elif section == "-":
+                new = "-"
+            else:
+                new = ""
+            sections[i] = new
 
     # Construct new title
     new_title = "".join(sections)
@@ -637,8 +674,7 @@ def _separate_author_name(
                 handle_mc_prefix=handle_mc_prefix
             )
 
-        # Remove apostrophes from names like O'Hara
-        sections[i] = section.replace("'", "")
+        sections[i] = section
 
     # Loop through words just before the last name we found
     for word in sections[divide - 1::-1]:
@@ -677,7 +713,7 @@ def get_sortable_author(
     non-alphanumeric characters in the result except for:
 
     * These periods,
-    * All hyphens,
+    * All hyphens and apostrophes,
     * The comma separating the first and last names, and
     * The period after "jr" or "sr", if applicable.
 
