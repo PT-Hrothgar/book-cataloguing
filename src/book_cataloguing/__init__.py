@@ -28,4 +28,4 @@ __all__ = [
     "title_sort",
     "author_sort"
 ]
-__version__ = "1.0"
+__version__ = "1.0.0"

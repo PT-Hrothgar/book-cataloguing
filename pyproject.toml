@@ -1,6 +1,6 @@
 [project]
 name = "book-cataloguing"
-version = "1.0"
+version = "1.0.0"
 authors = [
     {name = "PT-Hrothgar"}
 ]
