@@ -39,8 +39,8 @@ Their starting values are (in the developer's opinion) quite suitable for genera
 .. autofunction:: set_author_titles
 
 
-Other Functions
-***************
+Main Functions
+**************
 
 .. autofunction:: capitalize_title
 .. autofunction:: capitalize_author
